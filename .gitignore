@@ -163,6 +163,7 @@ cython_debug/
 
 # config.ini
 config.ini
+*.ini
 
 # csv files
 *.csv
