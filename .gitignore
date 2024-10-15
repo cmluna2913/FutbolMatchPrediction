@@ -170,3 +170,6 @@ config.ini
 
 # excel files
 *.xlsx
+
+# db files
+*.db
