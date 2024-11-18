@@ -31,7 +31,7 @@ So since I wanted to get an MVP model done ASAP, my approach is fairly simple. I
 such as which is home/away, the day of the week, round, and more. 
 
 In terms of team data, I decided to get current season player stat averages for games that occured before the game date being predicted. 
-For example, for the 11/23/24 LFAC vs Seattle game that is upcoming this saturday, I took averages
+For example, for the 11/23/24 LAFC vs Seattle game that is upcoming this saturday, I took averages
 of player performance for all the previous games the team played in the 2024 season. This is the data we should have in hand
 before each game occurs.
 
@@ -44,7 +44,7 @@ with some path extraction when I get the chance.
 
 The model is currently predicting if Home Wins/Loses/Draws and each team score (including penalties).
 Prediction 11/23/24:
-* LAFC vs Seattle Founders FC: LFAC wins 6-0 (lol)
+* LAFC vs Seattle Founders FC: LAFC wins 6-0 (lol)
 * New York City vs NY Red Bulls: TBD
 
 ---
