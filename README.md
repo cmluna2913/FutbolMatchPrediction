@@ -68,6 +68,8 @@ available on the web. But it'd be cool if I could automate this in some format.
 * Clean, clean, clean...There's currently some pitfalls in my cleaning. For example, I didn't account for the dummy
 variable trap in the encoding. I need to go back and review this. Also I need to encapsulate the cleaning. This will
 let me easily apply it to any additional years I scrape and will make it easier to modify.
+* I want to recreate the cleaning in SQL since I know SQL and it'll be good practice. I will use SQLite since it easily
+integrates with Python.
 * Incorporate other ML models.
 * Incorporate an easy way to make upcoming predictions. I want to place into .py files so I can easily and quickly
 run future predictions.
