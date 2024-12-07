@@ -44,8 +44,19 @@ with some path extraction when I get the chance.
 
 The model is currently predicting if Home Wins/Loses/Draws and each team score (including penalties).
 Prediction 11/23/24:
-* LAFC vs Seattle Founders FC: LAFC wins 6-0 (lol)
-* New York City vs NY Red Bulls: TBD
+* LAFC vs Seattle Sounders FC <br><t><t>Prediction: 6-0 (lol) <br><t><t>Result: 1-2 
+* New York City vs NY Red Bulls: <br><t><t>Prediction: 2-2 (penalty winner needs fixing) <br><t><t>Result: 0-2
+
+Prediction 11/24/24:
+* Orlando City vs Atlanta United <br><t><t>Prediction: 0-2 <br><t><t>Result: 1-0
+* LA Galaxy vs Minnesota <br><t><t>Prediction: 3-2 <br><t><t>Result: 6-2 (lol)
+
+Prediction 11/30/24:
+* Orlando City vs NY Red Bulls <br><t><t>Prediction: 0-0 (penalty winner needs fixing) <br><t><t>Result: 0-1
+* LA Galaxy vs Seattle Sounders<br><t><t>Prediction: 6-0 (lol)<br><t><t>Result: 1-0
+
+Prediction 12/7/2024:
+* LA Galaxy vs NY Red Bulls <br><t><t>Prediction: 3-2 <br><t><t>Result: TBD
 
 ---
 
