@@ -58,10 +58,13 @@ dependencies:
   - zeromq=4.3.5=he1f189c_5
   - zipp=3.20.2=pyhd8ed1ab_0
   - pip:
+      - about-time==4.2.1
+      - alive-progress==3.2.0
       - beautifulsoup4==4.12.3
       - certifi==2024.8.30
       - charset-normalizer==3.3.2
       - et-xmlfile==1.1.0
+      - grapheme==0.6.0
       - html5lib==1.1
       - idna==3.10
       - joblib==1.4.2
