@@ -6,6 +6,7 @@ from alive_progress import alive_bar
 import datetime
 import configparser
 from pathlib import Path
+from io import StringIO  
 
 # pull some variables, paths, and other from a central config.ini file
 config = configparser.ConfigParser()
@@ -136,6 +137,6 @@ def get_all_players_data(players_df, year):
             except:
                 print(f"Could not obtain data for {player_url.split('/')[-1]}")
                 failed_links.append(player_url)
-        bar()
+            bar()
     return all_players_stat_df, failed_links
         
