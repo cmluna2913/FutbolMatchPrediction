@@ -1,10 +1,12 @@
+# required libraries
 import time
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
-from alive_progress import alive_bar
 import datetime
 import configparser
+
+from bs4 import BeautifulSoup
+from alive_progress import alive_bar
 from pathlib import Path
 from io import StringIO  
 
@@ -15,10 +17,14 @@ config.read('../src/config.ini')
 # the output path is specified in the config.ini file
 output = Path(config['paths']['output'])
 
+# for file saving
 today = datetime.datetime.now()
 today = today.strftime("%Y_%m_%d")
 
-def get_html_data(url, parser='html.parser') -> BeautifulSoup:
+# for the main stat pages every player should have
+table_stat_types = ['summary', 'passing', 'passing_types', 'gca', 'defense', 'possession', 'misc']
+
+def get_html_data(url:str, parser:str='html.parser') -> BeautifulSoup:
     '''
     Extract html data from specified url and return a bs4 object.
     Parser can be specified if needed. Default is html.parser.
@@ -29,9 +35,17 @@ def get_html_data(url, parser='html.parser') -> BeautifulSoup:
     
     return soup
 
-def get_all_teams(url):
+def get_all_teams(url:str) -> (pd.DataFrame, str):
+    '''
+    Given a URL, extract teams and associated team URLs for the MLS league.
+    This is currently specific to the MLS league. This will eventually be updated
+    to work with additional leagues.
+    '''
     soup = get_html_data(url)
+    # this gets the associated year for the web-page, including if you run it on
+    # prior seasons
     year = soup.find('h1').text[10:14]
+    # this gets the team tables
     eastern_conference = soup.find('table', {'id': f'results{year}221Eastern-Conference_overall'})
     western_conference = soup.find('table', {'id': f'results{year}221Western-Conference_overall'})
 
@@ -46,25 +60,40 @@ def get_all_teams(url):
     
     all_teams.to_csv(output / f"mls_{year}/all_teams_{today}.csv", index=False)
 
-    return all_teams, year
+    return (all_teams, year)
 
-def extract_table_links(table):
+def extract_table_links(table) -> list:
+    '''
+    Provided a table from soup.find('table'), this returns
+    a list of the associated links from the table. This is based
+    on how the website used is set up.
+    '''
     links = []
     if table:
+        # get table rows
         rows = table.find_all('tr')
         for row in rows:
+            # get links
             link_tag = row.find('a')
             if link_tag:
                 links.append((link_tag.text, f"https://fbref.com{link_tag['href']}"))
     return links
 
-def extract_table_links_and_positions(table):
+def extract_table_links_and_positions(table) -> list:
+    '''
+    Provided a table from soup.find('table'), this returns
+    a list of the associated links and player positions from the table.
+    This is based on how the website used is set up.
+    '''
     links = []
     if table:
+        # get table rows
         rows = table.find_all('tr')
         for row in rows:
+            # get links
             link_tag = row.find('a')
             try:
+                # get player position(s)
                 position = row.find('td',{'data-stat':'position'})
                 position = position.text
             except:
@@ -73,16 +102,27 @@ def extract_table_links_and_positions(table):
                 links.append((link_tag.text, f"https://fbref.com{link_tag['href']}", position))
     return links
 
-def get_team_players(team):
+def get_team_players(team) -> pd.DataFrame:
+    '''
+    Used in conjunction with get_all_players().
+    This grabs the player name, player url, and position from the associated
+    team link.
+    '''
     time.sleep(int(config['other']['request_time_limit']))
+    # get html data
     soup = get_html_data(team['team_url'])
     players_df = extract_table_links_and_positions(soup.find('table', {'id': 'stats_standard_22'}))
+    # build dataframe
     players_df = pd.DataFrame(players_df)
     players_df.columns = ['player_name', 'player_url', 'position']
     players_df['team'] = team['team']
     return players_df
 
-def get_all_players(all_teams_df, year):
+def get_all_players(all_teams_df:pd.DataFrame, year:int) -> pd.DataFrame:
+    '''
+    Provided a dataframe of all teams, grab all players, urls, and positions
+    and concatenate them into one main dataframe.
+    '''
     all_team_players = list(all_teams_df.apply(get_team_players,axis=1))
 
     all_players_df = pd.DataFrame()
@@ -95,16 +135,22 @@ def get_all_players(all_teams_df, year):
 
     return all_players_df
 
-def get_teams_and_players(url):
+def get_teams_and_players(url:str) -> (str, pd.DataFrame, pd.DataFrame):
+    '''
+    Provided an initial url that contains the teams for the MLS season,
+    extract all teams, players, and associated urls and returns them as dataframes.
+    '''
     all_teams_df, year = get_all_teams(url)
 
     all_players_df = get_all_players(all_teams_df, year)
 
-    return year, all_teams_df, all_players_df
+    return (year, all_teams_df, all_players_df)
 
-table_stat_types = ['summary', 'passing', 'passing_types', 'gca', 'defense', 'possession', 'misc']
-
-def generate_player_stat_links(player_url, year):
+def generate_player_stat_links(player_url:str, year:int) -> list:
+    '''
+    Using the stat types list, generate the corresponding links for the input
+    player url and year. Returns the generated links as a list.
+    '''
     player_stat_links = []
     for stat_type in table_stat_types:
         temp = player_url.split('/')
@@ -114,7 +160,11 @@ def generate_player_stat_links(player_url, year):
 
     return player_stat_links
 
-def generate_individual_player_df(player_url, year):
+def generate_individual_player_df(player_url:str, year:int) -> pd.DataFrame:
+    '''
+    Provided an initial player url, generate a dataframe containing the main
+    corresponding stats.
+    '''
     player_stat_links = generate_player_stat_links(player_url, year)
     player_df = pd.DataFrame()
     for index, stat_link in enumerate(player_stat_links):
@@ -126,7 +176,11 @@ def generate_individual_player_df(player_url, year):
         player_df = pd.concat([player_df, stat_df], axis=1)
     return player_df
 
-def get_all_players_data(players_df, year):
+def get_all_players_data(players_df, year) -> pd.DataFrame:
+    '''
+    Provided an dataframe of players and urls, return a dataframe of the main
+    corresponding stats and any failed initial player links.
+    '''
     all_players_stat_df = pd.DataFrame()
     failed_links = []
     with alive_bar(players_df.shape[0], force_tty=True) as bar:
@@ -140,3 +194,33 @@ def get_all_players_data(players_df, year):
             bar()
     return all_players_stat_df, failed_links
         
+
+
+def save_player_htmls(players_df:pd.DataFrame, year:int):
+    '''
+    Provided a dataframe of players and urls,
+    saves html files to corresponding directories.
+    Returns a list of failed indicis and a list of failed links.
+    '''
+    failed_indices = []
+    failed_links = []
+    i=0
+    with alive_bar(players_df.shape[0], force_tty=True) as bar:
+        for index, row in players_df.iterrows():
+            time.sleep(int(config['other']['request_time_limit']))
+            stat_links = generate_player_stat_links(row['player_url'], year)
+            for i, stat_link in enumerate(stat_links):
+                try:
+                    time.sleep(int(config['other']['request_time_limit']))
+                    # print(stat_link)
+                    # print(f'{output}/mls_{year}/html_files/{row['player_name']}_{table_stat_types[i]}_{row['team']}.html')
+                    page = requests.get(stat_link)
+                    with open(f'{output}/mls_{year}/html_files/{row['team']}/{row['player_name']}_{table_stat_types[i]}.html', 'wb+') as f:
+                        f.write(page.content)
+                except:
+                    i+=1
+                    print(f'\r{i} failed html requests')
+                    failed_indices.append(index)
+                    failed_links.append(stat_link)
+            bar()
+    return (failed_indices, failed_links)
