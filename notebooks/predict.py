@@ -6,6 +6,23 @@ import pandas as pd
 import requests
 import openpyxl
 import sqlite3
+from sklearn.model_selection import train_test_split
+
+from datetime import datetime
+from io import StringIO
+from pathlib import Path
+from bs4 import BeautifulSoup
+from alive_progress import alive_bar
+from joblib import dump, load
+
+import configparser
+import os
+import time
+import random
+import pandas as pd
+import requests
+import openpyxl
+import sqlite3
 
 from datetime import datetime
 from io import StringIO
@@ -139,3 +156,88 @@ def clean_data_for_modeling(player_data, match_data):
 # cleaned_df
 
 # cleaned_df.to_csv(output / 'cleaned_df.csv')
+
+def predict_outcome(home_team, away_team, match_date, day, round):
+    season = int(match_date[:4])
+    current_match_data = pd.DataFrame([match_date, day, round, home_team, away_team, '', '',0,0,0,0,'']).T
+    current_match_data.columns = ['game_date', 'day', 'round', 'home_team', 'away_team', 'result', 'overall_result', 'home_score', 'home_penalties', 'away_score', 'away_penalties', 'game_key']
+    current_match_year = int(current_match_data['game_date'][0][:4])
+
+    players_numeric_columns = ['Min', 'Gls', 'Ast', 'PK', 'PKatt', 'Sh', 'SoT', 'CrdY',
+       'CrdR', 'Touches', 'Tkl', 'Int', 'Blocks', 'xG', 'npxG', 'xAG', 'SCA',
+       'GCA', 'Cmp', 'Att', 'Cmp%', 'PrgP', 'Carries', 'PrgC', 'Att_TakeOn',
+       'Succ']
+
+    prior_home_stats = all_players.query(f'Date<"{match_date}" and Date > "{current_match_year-1}-12-31" and Squad=="{home_team}" and Venue=="Home" and Start!="N"')
+    prior_home_stats = prior_home_stats[players_numeric_columns]
+    prior_away_stats = all_players.query(f'Date<"{match_date}" and Date > "{current_match_year-1}-12-31" and Squad=="{away_team}" and Venue=="Home" and Start!="N"')
+    prior_away_stats = prior_away_stats[players_numeric_columns]
+    
+    prior_home_stats.columns = [f'home_prior_{x}' for x in prior_home_stats.columns]
+    prior_away_stats.columns = [f'away_prior_{x}' for x in prior_away_stats.columns]
+    
+    if prior_home_stats.shape[0]==0:
+        temp = prior_home_stats.columns
+        prior_home_stats = pd.DataFrame([0]*len(prior_home_stats.columns)).T
+        prior_home_stats.columns = temp
+        
+    if prior_away_stats.shape[0]==0:
+        temp = prior_away_stats.columns
+        prior_away_stats = pd.DataFrame([0]*len(prior_away_stats.columns)).T
+        prior_away_stats.columns = temp
+
+    prior_home_stats = pd.DataFrame(prior_home_stats.describe().T['mean']).T.reset_index()
+    prior_away_stats = pd.DataFrame(prior_away_stats.describe().T['mean']).T.reset_index()
+    
+    final_row = pd.concat([current_match_data, prior_home_stats, prior_away_stats], axis=1)
+
+    final_row.drop(columns = ['index','game_date', 'result', 'overall_result', 'home_score', 'home_penalties', 'away_score', 'away_penalties', 'game_key'], inplace=True)
+
+    final_row = format_data_for_model(final_row)
+
+    model = load(output / 'dtr_mvp.joblib')
+    prediction = pd.DataFrame(model.predict(final_row))
+    prediction.columns = ['overall_result', 'home_score', 'home_penalties', 'away_score', 'away_penalties']
+
+    return prediction
+
+def format_data_for_model(df):
+    # df.drop(columns=['index','game_date', 'result', 'game_key', 'index.1', 'index.2'], inplace=True)
+    
+    df_nums = format_numerical_variables(df)
+    df_cats = format_categorical_variables(df)
+
+    formatted_df = pd.concat([df_nums, df_cats],axis=1)
+    return formatted_df
+    
+def format_categorical_variables(df, use_as_encoder=False):
+    df_cats = df.select_dtypes(include='O')
+    if use_as_encoder:
+        encoder = create_encoder(df)
+        # global encoder
+    else:
+        encoder = load(output / 'encoder_mvp.joblib')
+        # global encoder
+    df_cats_enc = pd.DataFrame(encoder.transform(df_cats).toarray())
+    df_cats_enc.columns = encoder.get_feature_names_out()
+    df_cats_enc.index = df_cats.index
+    return df_cats_enc
+    
+def format_numerical_variables(df):
+    df_nums = df.select_dtypes(exclude='O')
+    return df_nums
+    
+def create_encoder(df):
+    encoder = OneHotEncoder()
+    encoder.fit(df)
+    return encoder
+
+def result_to_num(result):
+    if result == "D":
+        return 0
+    elif result =="L":
+        return -1
+    else:
+        return 1
+
+

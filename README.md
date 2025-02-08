@@ -56,7 +56,7 @@ Prediction 11/30/24:
 * LA Galaxy vs Seattle Sounders<br><t><t>Prediction: 6-0 (lol)<br><t><t>Result: 1-0
 
 Prediction 12/7/2024:
-* LA Galaxy vs NY Red Bulls <br><t><t>Prediction: 3-2 <br><t><t>Result: TBD
+* LA Galaxy vs NY Red Bulls <br><t><t>Prediction: 3-2 <br><t><t>Result: 2-1
 
 ---
 
